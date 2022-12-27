@@ -1,0 +1,154 @@
+#    Copyright 2020 AxonIQ B.V.
+
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+
+#        http://www.apache.org/licenses/LICENSE-2.0
+
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: axonserver
+  labels:
+    app: axonserver
+spec:
+  serviceName: axonserver
+  replicas: 1
+  selector:
+    matchLabels:
+      app: axonserver
+  template:
+    metadata:
+      labels:
+        app: axonserver
+    spec:
+      securityContext:
+        runAsUser: 1001
+        fsGroup: 1001
+      terminationGracePeriodSeconds: 120
+      containers:
+      - name: axonserver
+        image: axoniq/axonserver:4.6.7-jdk-11-dev-nonroot
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: "2"
+            memory: "1Gi"
+          requests:
+            cpu: "1"
+            memory: "512M"
+        ports:
+        - name: gui
+          containerPort: 8024
+          protocol: TCP
+        - name: client-grpc
+          containerPort: 8124
+          protocol: TCP
+        env:
+        - name: AXONIQ_AXONSERVER_NAME
+          value: axonserver
+        - name: AXONIQ_AXONSERVER_HOSTNAME
+          value: axonserver
+        volumeMounts:
+        - name: data
+          mountPath: /axonserver/data
+        - name: events
+          mountPath: /axonserver/events
+        - name: plugins
+          mountPath: /axonserver/plugins
+        - name: config
+          mountPath: /axonserver/config
+          readOnly: true
+        startupProbe:
+          httpGet:
+            path: /actuator/info
+            port: 8024
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 1
+          failureThreshold: 110
+        readinessProbe:
+          httpGet:
+            path: /actuator/info
+            port: 8024
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 1
+          failureThreshold: 30
+        livenessProbe:
+          httpGet:
+            path: /actuator/info
+            port: 8024
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+      volumes:
+        - name: config
+          configMap:
+            name: axonserver-properties
+  volumeClaimTemplates:
+    - metadata:
+        name: events
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 5M
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 1M
+    - metadata:
+        name: plugins
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 1M
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: axonserver
+  labels:
+    app: axonserver
+spec:
+  ports:
+  - name: client-grpc
+    port: 8124
+    targetPort: 8124
+    appProtocol: tls
+  clusterIP: None
+  selector:
+    app: axonserver
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: axonserver-gui
+  labels:
+    app: axonserver
+spec:
+  ports:
+    - name: gui
+      port: 8024
+      targetPort: 8024
+  selector:
+    app: axonserver
+  type: LoadBalancer
+  sessionAffinity: ClientIP
+---
