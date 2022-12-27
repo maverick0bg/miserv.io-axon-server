@@ -1,0 +1,9 @@
+apiVersion: v1
+data:
+  axonserver.properties: |
+    axoniq.axonserver.domain=default.svc.cluster.local
+    axoniq.axonserver.accesscontrol.enabled=false
+    axoniq.axonserver.ssl.enabled=false
+kind: ConfigMap
+metadata:
+  name: axonserver-properties
