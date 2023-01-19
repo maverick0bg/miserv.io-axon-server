@@ -1,12 +1,32 @@
 name: Deploy axon server
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "Axon-CICD"]
   pull_request:
     branches: ["main"]
     paths:
       - "k8s/**"
       - "**/deploy-axon-server.yaml"
+  workflow_dispatch: 
+    branches: ["main"]
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+jobs:
+  pprepare_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3.3.0
+
+      - name: Configure AWS credentials from Test account
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::527321763428:role/github_actions
+          aws-region: eu-west-1
+
+      - name: configure kubectl
+        run: |
+          aws eks update-kubeconfig --region eu-west-1 --name miserv-io-eks-cluster
+          kubectl cluster-info
+
+
+      
