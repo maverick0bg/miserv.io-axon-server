@@ -30,6 +30,7 @@ jobs:
       - name: configure kubectl
         run: |
           aws eks update-kubeconfig --region eu-west-1 --name miserv-io-eks-cluster
+          aws eks get-token
           kubectl cluster-info
 
 
