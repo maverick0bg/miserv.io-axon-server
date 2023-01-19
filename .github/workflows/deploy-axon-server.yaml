@@ -24,7 +24,7 @@ jobs:
       - name: Configure AWS credentials from Test account
         uses: aws-actions/configure-aws-credentials@v1.7.0
         with:
-          role-to-assume: arn:aws:iam::527321763428:role/github_actions
+          role-to-assume: arn:aws:iam::527321763428:role/github-oidc-auth-role
           aws-region: eu-west-1
 
       - name: configure kubectl
