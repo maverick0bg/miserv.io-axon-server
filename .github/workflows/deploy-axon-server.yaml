@@ -35,6 +35,7 @@ jobs:
 
       - name: deploy axon server
         run: |
+          aws sts get-caller-identity
           kubectl -n miserv-io apply -f ./k8s/
 
       
