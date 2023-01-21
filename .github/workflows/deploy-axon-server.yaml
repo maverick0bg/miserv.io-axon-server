@@ -31,11 +31,11 @@ jobs:
         run: |
           aws eks update-kubeconfig --region eu-west-1 --name miserv-io-eks-cluster
           aws eks get-token --cluster-name miserv-io-eks-cluster
+          aws sts get-caller-identity
           kubectl cluster-info
 
       - name: deploy axon server
         run: |
-          aws sts get-caller-identity
           kubectl -n miserv-io apply -f ./k8s/
 
       
